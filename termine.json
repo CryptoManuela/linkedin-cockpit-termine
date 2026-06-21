@@ -1,0 +1,29 @@
+{
+  "updated": "2026-06-21",
+  "cta": {
+    "label": "Alle Programme",
+    "url": "https://manuela-ruppert.de/ki-coaching"
+  },
+  "termine": [
+    {
+      "datum": "08. September 2026",
+      "titel": "Neue Maestra – Warteliste offen - Das 3-Monatsprogramm für die Unternehmerin",
+      "url": "https://manuela-ruppert.de/maestra"
+    },
+    {
+      "datum": "Jederzeit auf Anfrage",
+      "titel": "Maestra Lounge – Advanced Community",
+      "url": "https://manuela-ruppert.de/maestra-lounge"
+    },
+    {
+      "datum": "auf Anfrage",
+      "titel": "Maestra Privée",
+      "url": "https://manuela-ruppert.de/vip"
+    },
+    {
+      "datum": "ab September",
+      "titel": "MAESTRO - Der erste Männerkurs - Kleingruppe mit abgestimmtem Inhalt",
+      "url": "https://manuela-ruppert.de/kontakt"
+    }
+  ]
+}
