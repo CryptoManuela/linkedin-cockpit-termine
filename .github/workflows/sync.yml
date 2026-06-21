@@ -1,0 +1,33 @@
+name: Termine-Sync (Notion → Ticker)
+
+on:
+  schedule:
+    - cron: "17 * * * *" # stündlich um :17
+  workflow_dispatch: {} # manuell auslösbar
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Notion → termine.json
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        run: node sync.mjs
+      - name: Commit bei Änderung
+        run: |
+          if ! git diff --quiet termine.json; then
+            git config user.name "termine-sync"
+            git config user.email "actions@users.noreply.github.com"
+            git add termine.json
+            git commit -m "Termine aktualisiert ($(date -u +%Y-%m-%dT%H:%MZ))"
+            git push
+          else
+            echo "Keine Änderung."
+          fi
