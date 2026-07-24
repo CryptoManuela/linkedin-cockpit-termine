@@ -9,21 +9,39 @@ const CTA = { label: "Alle Programme", url: "https://manuela-ruppert.de/ki-coach
 
 if (!NOTION_KEY) { console.error("NOTION_API_KEY fehlt"); process.exit(1); }
 
-const res = await fetch(`https://api.notion.com/v1/databases/${DB}/query`, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${NOTION_KEY}`,
-    "Notion-Version": "2022-06-28",
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    filter: { property: "Aktiv", checkbox: { equals: true } },
-    sorts: [{ property: "Reihenfolge", direction: "ascending" }],
-  }),
-});
-if (!res.ok) { console.error("Notion " + res.status + ": " + (await res.text()).slice(0, 300)); process.exit(1); }
+// Notion wirft sporadisch 5xx/522 (kurze Server-Aussetzer) — die überbrücken
+// Retries mit Wartezeit. Echte Fehler (401, 404 …) brechen weiterhin sofort ab.
+async function queryNotion() {
+  const wartezeiten = [10_000, 30_000, 60_000];
+  for (let versuch = 0; ; versuch++) {
+    let res = null;
+    try {
+      res = await fetch(`https://api.notion.com/v1/databases/${DB}/query`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${NOTION_KEY}`,
+          "Notion-Version": "2022-06-28",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filter: { property: "Aktiv", checkbox: { equals: true } },
+          sorts: [{ property: "Reihenfolge", direction: "ascending" }],
+        }),
+      });
+    } catch {} // Netzwerkfehler → wie transienter Serverfehler behandeln
+    if (res?.ok) return res.json();
+    const status = res ? "Notion " + res.status : "Netzwerkfehler";
+    const transient = !res || res.status === 408 || res.status === 429 || res.status >= 500;
+    if (!transient || versuch >= wartezeiten.length) {
+      console.error(status + ": " + (res ? (await res.text()).slice(0, 300) : ""));
+      process.exit(1);
+    }
+    console.log(`${status} (Versuch ${versuch + 1}/${wartezeiten.length + 1}) — neuer Versuch in ${wartezeiten[versuch] / 1000}s …`);
+    await new Promise((r) => setTimeout(r, wartezeiten[versuch]));
+  }
+}
 
-const data = await res.json();
+const data = await queryNotion();
 const termine = data.results
   .map((p) => {
     const pr = p.properties || {};
